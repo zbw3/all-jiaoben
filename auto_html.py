@@ -14,6 +14,16 @@ def get_unique_file_path(target_folder, filename):
     return os.path.join(target_folder, unique_filename)
 
 
+def safe_rename(folder, new_folder_name):
+    """安全重命名文件夹，避免由于特殊字符引起的错误"""
+    try:
+        os.rename(folder, new_folder_name)
+    except FileNotFoundError:
+        print(f"文件夹未找到: {folder}")
+    except Exception as e:
+        print(f"无法重命名文件夹 {folder} 为 {new_folder_name}: {e}")
+
+
 def get_gif_images_from_subfolders(base_folder, selected_folder, max_images_per_html=20):
     # 获取所有某某某文件夹
     subfolders = [f.path for f in os.scandir(base_folder) if f.is_dir()]
@@ -60,7 +70,8 @@ def get_gif_images_from_subfolders(base_folder, selected_folder, max_images_per_
             # 如果文件夹中的图片已经被全部取出，跳过
             if not images:
                 new_folder_name = f"{folder} 图片已全部取出"
-                os.rename(folder, os.path.join(base_folder, new_folder_name))
+                # os.rename(folder, os.path.join(base_folder, new_folder_name))
+                safe_rename(folder, new_folder_name)
                 continue
 
             # 随机选择一张 GIF 图片
@@ -76,8 +87,8 @@ def get_gif_images_from_subfolders(base_folder, selected_folder, max_images_per_
 
             # 添加到 HTML 内容
             relative_image_path = os.path.relpath(unique_target_path, base_folder)  # 获取相对路径
-            current_html_content += f'<div class="caption"><img src="{relative_image_path}" alt="{selected_image}">\n'
             current_html_content += f'<p>{selected_image}</p></div>\n'  # 添加文件名作为标题
+            current_html_content += f'<div class="caption"><img src="{relative_image_path}" alt="{selected_image}">\n'
 
             # 增加已选图片计数
             current_html_image_count += 1
@@ -85,10 +96,11 @@ def get_gif_images_from_subfolders(base_folder, selected_folder, max_images_per_
             # 如果该文件夹的图片已全部取出，更新文件夹名称
             if not images:
                 new_folder_name = f"{folder} 图片已全部取出"
-                os.rename(folder, os.path.join(base_folder, new_folder_name))
+                # os.rename(folder, os.path.join(base_folder, new_folder_name))
+                safe_rename(folder, new_folder_name)
 
         # 如果当前 HTML 文件没有图片，退出循环
-        if current_html_image_count == 0:
+        if current_html_image_count < max_images_per_html:
             break
 
         current_html_content += '''
@@ -97,8 +109,8 @@ def get_gif_images_from_subfolders(base_folder, selected_folder, max_images_per_
         '''
 
         # 生成 HTML 文件
-        html_file_name = f'gifs_{len(html_files) + 1}.html'
-        with open(os.path.join(base_folder, html_file_name), 'w', encoding='utf-8') as f:
+        html_file_name = f'auto_gifs_{len(html_files) + 1}.html'
+        with open(os.path.join(output_folder, html_file_name), 'w', encoding='utf-8') as f:
             f.write(current_html_content)
 
         html_files.append(html_file_name)
@@ -107,8 +119,9 @@ def get_gif_images_from_subfolders(base_folder, selected_folder, max_images_per_
 
 
 # 设置基本文件夹路径
-base_folder = r'G:\toutiao\20241113toutiao'  # 替换为你的路径
+base_folder = r'G:\toutiao\20241115toutiao'  # 替换为你的路径
 selected_folder = r'G:\toutiao\selected_image'  # 替换为你的目标文件夹路径
+output_folder = r'G:\toutiao\gif_html'  # 输出 Word 文件的文件夹路径
 
 # 确保目标文件夹存在
 os.makedirs(selected_folder, exist_ok=True)
